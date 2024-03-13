@@ -1,16 +1,51 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test
-spec:
-  replicas: 3
-  template:
+  name: myapp-blue         # deployment 의 이름
+spec:                 # 여기부터 rs
+  replicas: 3         # Pod 를 3개 띄우겠다! (min)
+  selector:
+    matchLabels:
+      color: blue
+  template:           # 여기부터 Pod
     metadata:
-      name: pod-test
-    spec:
+      name: mynginx-blue   # pod 의 이름
+      labels:
+        color: blue
+    spec:             # 여기부터 컨테이너
       containers:
-      - name: ctn-test
-        image: nginx
+      - name: mynginxctn-blue    # 컨테이너의 이름
+        image: brian24/kakaodev:blue
+        resources:
+          limits:
+            memory: "32Mi"
+            cpu: "200m"     # 1000m 이 cpu 1개를 의미, 500m = 0.5vcpus
+        ports:
+        - containerPort: 80
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp-green         # deployment 의 이름
+spec:                 # 여기부터 rs
+  replicas: 1         # Pod 를 3개 띄우겠다! (min)
+  selector:
+    matchLabels:
+      color: green
+  template:           # 여기부터 Pod
+    metadata:
+      name: mynginx-green   # pod 의 이름
+      labels:
+        color: green
+    spec:             # 여기부터 컨테이너
+      containers:
+      - name: mynginxctn-green    # 컨테이너의 이름
+        image: brian24/kakaodev:green
+        resources:
+          limits:
+            memory: "32Mi"
+            cpu: "200m"     # 1000m 이 cpu 1개를 의미, 500m = 0.5vcpus
         ports:
         - containerPort: 80
 
@@ -18,10 +53,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: test
+  name: myapp
 spec:
-  type: LoadBalancer
+  # type 지정이 되지 않았다면 cluster-ip 가 기본 타입
+  selector:       # 연결할 Pod 의 Label
+    color: blue
+  type: NodePort
   ports:
   - port: 80            # LB 의 포트가 됨!!! = Cluster-IP 포트가 됨
     targetPort: 80
-
+    nodePort: 30002  
+    # protocol: TCP   # 대문자로. TCP가 default
